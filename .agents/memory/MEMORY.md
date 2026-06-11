@@ -1,0 +1,1 @@
+- [JobTracker migration notes](jobtracker.md) — key gotchas from porting Next.js + Prisma + NextAuth to Vite + Express + Drizzle
