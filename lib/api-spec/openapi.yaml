@@ -3,20 +3,23 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: JobTracker API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication
+  - name: applications
+    description: Job applications
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +27,226 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /auth/register:
+    post:
+      operationId: register
+      tags: [auth]
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterInput"
+      responses:
+        "201":
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUser"
+        "400":
+          description: Bad request
+        "409":
+          description: Email already in use
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginInput"
+      responses:
+        "200":
+          description: Logged in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUser"
+        "401":
+          description: Invalid credentials
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Logout
+      responses:
+        "200":
+          description: Logged out
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current user
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUser"
+        "401":
+          description: Unauthorized
+
+  /applications:
+    get:
+      operationId: listApplications
+      tags: [applications]
+      summary: List applications
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+        - name: order
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of applications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Application"
+        "401":
+          description: Unauthorized
+
+    post:
+      operationId: createApplication
+      tags: [applications]
+      summary: Create application
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApplicationInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Application"
+        "400":
+          description: Bad request
+        "401":
+          description: Unauthorized
+
+  /applications/dashboard:
+    get:
+      operationId: getDashboard
+      tags: [applications]
+      summary: Get dashboard stats
+      responses:
+        "200":
+          description: Dashboard stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardStats"
+        "401":
+          description: Unauthorized
+
+  /applications/export:
+    get:
+      operationId: exportApplications
+      tags: [applications]
+      summary: Export applications as CSV
+      responses:
+        "200":
+          description: CSV file
+        "401":
+          description: Unauthorized
+
+  /applications/{id}:
+    get:
+      operationId: getApplication
+      tags: [applications]
+      summary: Get application by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Application
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Application"
+        "401":
+          description: Unauthorized
+        "404":
+          description: Not found
+
+    patch:
+      operationId: updateApplication
+      tags: [applications]
+      summary: Update application
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApplicationUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Application"
+        "401":
+          description: Unauthorized
+        "404":
+          description: Not found
+
+    delete:
+      operationId: deleteApplication
+      tags: [applications]
+      summary: Delete application
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Deleted
+        "401":
+          description: Unauthorized
+        "404":
+          description: Not found
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +257,143 @@ components:
       required:
         - status
 
+    RegisterInput:
+      type: object
+      required: [email, password]
+      properties:
+        name:
+          type: ["string", "null"]
+        email:
+          type: string
+        password:
+          type: string
+
+    LoginInput:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+
+    AuthUser:
+      type: object
+      required: [id, email]
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        name:
+          type: ["string", "null"]
+
+    StatusHistory:
+      type: object
+      required: [id, applicationId, toStatus, changedAt]
+      properties:
+        id:
+          type: string
+        applicationId:
+          type: string
+        fromStatus:
+          type: ["string", "null"]
+        toStatus:
+          type: string
+        changedAt:
+          type: string
+        note:
+          type: ["string", "null"]
+
+    Application:
+      type: object
+      required: [id, userId, company, role, status, appliedDate, createdAt, updatedAt, statusHistory]
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        company:
+          type: string
+        role:
+          type: string
+        jobUrl:
+          type: ["string", "null"]
+        location:
+          type: ["string", "null"]
+        salary:
+          type: ["string", "null"]
+        status:
+          type: string
+        appliedDate:
+          type: string
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+        statusHistory:
+          type: array
+          items:
+            $ref: "#/components/schemas/StatusHistory"
+
+    ApplicationInput:
+      type: object
+      required: [company, role]
+      properties:
+        company:
+          type: string
+        role:
+          type: string
+        jobUrl:
+          type: ["string", "null"]
+        location:
+          type: ["string", "null"]
+        salary:
+          type: ["string", "null"]
+        status:
+          type: string
+        appliedDate:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+
+    ApplicationUpdate:
+      type: object
+      properties:
+        company:
+          type: string
+        role:
+          type: string
+        jobUrl:
+          type: ["string", "null"]
+        location:
+          type: ["string", "null"]
+        salary:
+          type: ["string", "null"]
+        status:
+          type: string
+        appliedDate:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+
+    DashboardStats:
+      type: object
+      required: [total, byStatus, stale, recent]
+      properties:
+        total:
+          type: integer
+        byStatus:
+          type: object
+          additionalProperties:
+            type: integer
+        stale:
+          type: array
+          items:
+            $ref: "#/components/schemas/Application"
+        recent:
+          type: array
+          items:
+            $ref: "#/components/schemas/Application"
