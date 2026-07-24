@@ -40,6 +40,7 @@ async function buildAll() {
       "canvas",
       "bcrypt",
       "bcryptjs",
+      "connect-pg-simple",
       "argon2",
       "fsevents",
       "re2",
