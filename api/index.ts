@@ -5,11 +5,14 @@
 // Vercel compiles this file to CommonJS, but dist/app.mjs is an ES module, so
 // a static import/export-from gets transpiled to a require() that can't load
 // it (ERR_REQUIRE_ESM). A dynamic import() is valid from CJS and avoids that.
-import type { IncomingMessage, ServerResponse } from "node:http";
+//
+// Vercel type-checks this file in isolation, without @types/node or a
+// declaration file for dist/app.mjs available, so req/res and the import
+// stay untyped here.
+let appPromise: Promise<any> | null = null;
 
-let appPromise: Promise<(req: IncomingMessage, res: ServerResponse) => void> | null = null;
-
-export default async function handler(req: IncomingMessage, res: ServerResponse) {
+export default async function handler(req: any, res: any) {
+  // @ts-ignore -- dist/app.mjs is plain JS output with no declaration file
   appPromise ??= import("../artifacts/api-server/dist/app.mjs").then((m) => m.default);
   const app = await appPromise;
   return app(req, res);
