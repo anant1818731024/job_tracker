@@ -2,15 +2,9 @@ import { Router } from "express";
 import { db, applicationsTable, statusHistoryTable } from "@workspace/db";
 import { eq, and, or, ilike, desc, asc } from "drizzle-orm";
 import { randomUUID } from "crypto";
+import { requireVerifiedAuth as requireAuth } from "../middlewares/auth";
 
 const router = Router();
-
-function requireAuth(req: any, res: any, next: any) {
-  const userId = req.session?.userId;
-  if (!userId) return res.status(401).json({ error: "Unauthorized" });
-  req.userId = userId;
-  next();
-}
 
 async function getAppWithHistory(id: string, userId: string) {
   const [app] = await db.select().from(applicationsTable)

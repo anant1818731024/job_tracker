@@ -12,6 +12,8 @@ tags:
     description: Health operations
   - name: auth
     description: Authentication
+  - name: admin
+    description: Admin
   - name: applications
     description: Job applications
 paths:
@@ -95,6 +97,208 @@ paths:
                 $ref: "#/components/schemas/AuthUser"
         "401":
           description: Unauthorized
+
+  /auth/otp/request:
+    post:
+      operationId: requestOtp
+      tags: [auth]
+      summary: Send a one-time email code (used for OTP login and password reset)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OtpRequestInput"
+      responses:
+        "200":
+          description: Code sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OtpRequestResult"
+        "400":
+          description: Bad request
+        "429":
+          description: Too many requests — resend cooldown in effect
+
+  /auth/otp/login:
+    post:
+      operationId: otpLogin
+      tags: [auth]
+      summary: Log in (or sign up) with an emailed one-time code
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OtpLoginInput"
+      responses:
+        "200":
+          description: Logged in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUser"
+        "400":
+          description: Bad request
+        "401":
+          description: Invalid or expired code
+
+  /auth/password/reset:
+    post:
+      operationId: resetPassword
+      tags: [auth]
+      summary: Set a new password after verifying an emailed one-time code
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PasswordResetInput"
+      responses:
+        "200":
+          description: Password updated
+        "400":
+          description: Bad request
+        "401":
+          description: Invalid or expired code
+        "404":
+          description: No account with that email
+
+  /auth/verify/request:
+    post:
+      operationId: requestEmailVerification
+      tags: [auth]
+      summary: (Re)send a verification code to the current user's own email
+      responses:
+        "200":
+          description: Code sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OtpRequestResult"
+        "401":
+          description: Unauthorized
+        "429":
+          description: Too many requests — resend cooldown in effect
+
+  /auth/verify/confirm:
+    post:
+      operationId: confirmEmailVerification
+      tags: [auth]
+      summary: Confirm the current user's email with a one-time code
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VerifyConfirmInput"
+      responses:
+        "200":
+          description: Verified
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUser"
+        "401":
+          description: Unauthorized, or invalid/expired code
+
+  /auth/providers:
+    get:
+      operationId: getAuthProviders
+      tags: [auth]
+      summary: Which optional sign-in providers are configured
+      responses:
+        "200":
+          description: Provider availability
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthProviders"
+
+  /auth/google:
+    get:
+      operationId: googleLogin
+      tags: [auth]
+      summary: Start the Google OAuth sign-in flow (browser redirect, not for XHR)
+      responses:
+        "302":
+          description: Redirect to Google's consent screen
+        "501":
+          description: Google sign-in is not configured
+
+  /auth/google/callback:
+    get:
+      operationId: googleCallback
+      tags: [auth]
+      summary: Google OAuth redirect target — completes login and redirects to the frontend
+      parameters:
+        - name: code
+          in: query
+          schema:
+            type: string
+        - name: state
+          in: query
+          schema:
+            type: string
+      responses:
+        "302":
+          description: Redirect back to the frontend, logged in (or with an ?error= query param)
+        "501":
+          description: Google sign-in is not configured
+
+  /admin/setup:
+    get:
+      operationId: getAdminSetupStatus
+      tags: [admin]
+      summary: Whether an admin account already exists
+      responses:
+        "200":
+          description: Setup status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminSetupStatus"
+    post:
+      operationId: bootstrapAdmin
+      tags: [admin]
+      summary: Bootstrap the first admin account using a one-time setup token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminSetupInput"
+      responses:
+        "200":
+          description: Admin created/promoted
+        "400":
+          description: Bad request
+        "401":
+          description: Invalid setup token
+        "409":
+          description: Admin account already exists
+        "503":
+          description: ADMIN_SETUP_TOKEN is not configured
+
+  /admin/users:
+    get:
+      operationId: listAdminUsers
+      tags: [admin]
+      summary: List all users (admin only)
+      responses:
+        "200":
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminUser"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden — admin access required
 
   /applications:
     get:
@@ -279,7 +483,7 @@ components:
 
     AuthUser:
       type: object
-      required: [id, email]
+      required: [id, email, isAdmin, emailVerifiedAt, mustVerify, verifyGraceEndsAt]
       properties:
         id:
           type: string
@@ -287,6 +491,102 @@ components:
           type: string
         name:
           type: ["string", "null"]
+        isAdmin:
+          type: boolean
+        emailVerifiedAt:
+          type: ["string", "null"]
+        mustVerify:
+          type: boolean
+          description: True once the email-verification grace period has elapsed for an unverified account — the app must be fully blocked until verified.
+        verifyGraceEndsAt:
+          type: string
+          description: ISO timestamp — when the grace period ends (createdAt + 48h) for an unverified account.
+
+    OtpRequestInput:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+
+    OtpRequestResult:
+      type: object
+      required: [ok, resendIn]
+      properties:
+        ok:
+          type: boolean
+        resendIn:
+          type: integer
+          description: Seconds to wait before requesting another code.
+        alreadyVerified:
+          type: boolean
+
+    OtpLoginInput:
+      type: object
+      required: [email, code]
+      properties:
+        email:
+          type: string
+        code:
+          type: string
+
+    PasswordResetInput:
+      type: object
+      required: [email, code, newPassword]
+      properties:
+        email:
+          type: string
+        code:
+          type: string
+        newPassword:
+          type: string
+
+    VerifyConfirmInput:
+      type: object
+      required: [code]
+      properties:
+        code:
+          type: string
+
+    AuthProviders:
+      type: object
+      required: [google]
+      properties:
+        google:
+          type: boolean
+
+    AdminSetupStatus:
+      type: object
+      required: [adminExists]
+      properties:
+        adminExists:
+          type: boolean
+
+    AdminSetupInput:
+      type: object
+      required: [token, email]
+      properties:
+        token:
+          type: string
+        email:
+          type: string
+
+    AdminUser:
+      type: object
+      required: [id, email, isAdmin, emailVerifiedAt, createdAt]
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        name:
+          type: ["string", "null"]
+        isAdmin:
+          type: boolean
+        emailVerifiedAt:
+          type: ["string", "null"]
+        createdAt:
+          type: string
 
     StatusHistory:
       type: object

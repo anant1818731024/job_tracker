@@ -12,6 +12,8 @@ async function request(path: string, options: RequestInit = {}) {
   return res;
 }
 
+export const GOOGLE_LOGIN_URL = "/api/auth/google";
+
 export const api = {
   auth: {
     register: (data: { name?: string; email: string; password: string }) =>
@@ -20,6 +22,22 @@ export const api = {
       request("/auth/login", { method: "POST", body: JSON.stringify(data) }),
     logout: () => request("/auth/logout", { method: "POST" }),
     me: () => request("/auth/me"),
+    providers: () => request("/auth/providers"),
+    otpRequest: (data: { email: string }) =>
+      request("/auth/otp/request", { method: "POST", body: JSON.stringify(data) }),
+    otpLogin: (data: { email: string; code: string }) =>
+      request("/auth/otp/login", { method: "POST", body: JSON.stringify(data) }),
+    passwordReset: (data: { email: string; code: string; newPassword: string }) =>
+      request("/auth/password/reset", { method: "POST", body: JSON.stringify(data) }),
+    verifyRequest: () => request("/auth/verify/request", { method: "POST" }),
+    verifyConfirm: (data: { code: string }) =>
+      request("/auth/verify/confirm", { method: "POST", body: JSON.stringify(data) }),
+  },
+  admin: {
+    setupStatus: () => request("/admin/setup"),
+    setup: (data: { token: string; email: string }) =>
+      request("/admin/setup", { method: "POST", body: JSON.stringify(data) }),
+    users: () => request("/admin/users"),
   },
   applications: {
     list: (params?: Record<string, string>) => {

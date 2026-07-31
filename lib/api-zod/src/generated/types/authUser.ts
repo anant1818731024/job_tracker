@@ -11,4 +11,11 @@ export interface AuthUser {
   email: string;
   /** @nullable */
   name?: string | null;
+  isAdmin: boolean;
+  /** @nullable */
+  emailVerifiedAt: string | null;
+  /** True once the email-verification grace period has elapsed for an unverified account — the app must be fully blocked until verified. */
+  mustVerify: boolean;
+  /** ISO timestamp — when the grace period ends (createdAt + 48h) for an unverified account. */
+  verifyGraceEndsAt: string;
 }

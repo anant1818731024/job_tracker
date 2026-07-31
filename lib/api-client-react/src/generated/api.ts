@@ -20,15 +20,25 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  AdminSetupInput,
+  AdminSetupStatus,
+  AdminUser,
   Application,
   ApplicationInput,
   ApplicationUpdate,
+  AuthProviders,
   AuthUser,
   DashboardStats,
+  GoogleCallbackParams,
   HealthStatus,
   ListApplicationsParams,
   LoginInput,
-  RegisterInput
+  OtpLoginInput,
+  OtpRequestInput,
+  OtpRequestResult,
+  PasswordResetInput,
+  RegisterInput,
+  VerifyConfirmInput
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -397,6 +407,823 @@ export function useGetMe<TData = Awaited<ReturnType<typeof getMe>>, TError = Err
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetMeQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getRequestOtpUrl = () => {
+
+
+
+
+  return `/api/auth/otp/request`
+}
+
+/**
+ * @summary Send a one-time email code (used for OTP login and password reset)
+ */
+export const requestOtp = async (otpRequestInput: OtpRequestInput, options?: RequestInit): Promise<OtpRequestResult> => {
+
+  return customFetch<OtpRequestResult>(getRequestOtpUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      otpRequestInput,)
+  }
+);}
+
+
+
+
+export const getRequestOtpMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestOtp>>, TError,{data: BodyType<OtpRequestInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof requestOtp>>, TError,{data: BodyType<OtpRequestInput>}, TContext> => {
+
+const mutationKey = ['requestOtp'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof requestOtp>>, {data: BodyType<OtpRequestInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  requestOtp(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RequestOtpMutationResult = NonNullable<Awaited<ReturnType<typeof requestOtp>>>
+    export type RequestOtpMutationBody = BodyType<OtpRequestInput>
+    export type RequestOtpMutationError = ErrorType<void>
+
+    /**
+ * @summary Send a one-time email code (used for OTP login and password reset)
+ */
+export const useRequestOtp = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestOtp>>, TError,{data: BodyType<OtpRequestInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof requestOtp>>,
+        TError,
+        {data: BodyType<OtpRequestInput>},
+        TContext
+      > => {
+      return useMutation(getRequestOtpMutationOptions(options));
+    }
+
+export const getOtpLoginUrl = () => {
+
+
+
+
+  return `/api/auth/otp/login`
+}
+
+/**
+ * @summary Log in (or sign up) with an emailed one-time code
+ */
+export const otpLogin = async (otpLoginInput: OtpLoginInput, options?: RequestInit): Promise<AuthUser> => {
+
+  return customFetch<AuthUser>(getOtpLoginUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      otpLoginInput,)
+  }
+);}
+
+
+
+
+export const getOtpLoginMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof otpLogin>>, TError,{data: BodyType<OtpLoginInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof otpLogin>>, TError,{data: BodyType<OtpLoginInput>}, TContext> => {
+
+const mutationKey = ['otpLogin'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof otpLogin>>, {data: BodyType<OtpLoginInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  otpLogin(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type OtpLoginMutationResult = NonNullable<Awaited<ReturnType<typeof otpLogin>>>
+    export type OtpLoginMutationBody = BodyType<OtpLoginInput>
+    export type OtpLoginMutationError = ErrorType<void>
+
+    /**
+ * @summary Log in (or sign up) with an emailed one-time code
+ */
+export const useOtpLogin = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof otpLogin>>, TError,{data: BodyType<OtpLoginInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof otpLogin>>,
+        TError,
+        {data: BodyType<OtpLoginInput>},
+        TContext
+      > => {
+      return useMutation(getOtpLoginMutationOptions(options));
+    }
+
+export const getResetPasswordUrl = () => {
+
+
+
+
+  return `/api/auth/password/reset`
+}
+
+/**
+ * @summary Set a new password after verifying an emailed one-time code
+ */
+export const resetPassword = async (passwordResetInput: PasswordResetInput, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getResetPasswordUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      passwordResetInput,)
+  }
+);}
+
+
+
+
+export const getResetPasswordMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof resetPassword>>, TError,{data: BodyType<PasswordResetInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof resetPassword>>, TError,{data: BodyType<PasswordResetInput>}, TContext> => {
+
+const mutationKey = ['resetPassword'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof resetPassword>>, {data: BodyType<PasswordResetInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  resetPassword(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ResetPasswordMutationResult = NonNullable<Awaited<ReturnType<typeof resetPassword>>>
+    export type ResetPasswordMutationBody = BodyType<PasswordResetInput>
+    export type ResetPasswordMutationError = ErrorType<void>
+
+    /**
+ * @summary Set a new password after verifying an emailed one-time code
+ */
+export const useResetPassword = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof resetPassword>>, TError,{data: BodyType<PasswordResetInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof resetPassword>>,
+        TError,
+        {data: BodyType<PasswordResetInput>},
+        TContext
+      > => {
+      return useMutation(getResetPasswordMutationOptions(options));
+    }
+
+export const getRequestEmailVerificationUrl = () => {
+
+
+
+
+  return `/api/auth/verify/request`
+}
+
+/**
+ * @summary (Re)send a verification code to the current user's own email
+ */
+export const requestEmailVerification = async ( options?: RequestInit): Promise<OtpRequestResult> => {
+
+  return customFetch<OtpRequestResult>(getRequestEmailVerificationUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getRequestEmailVerificationMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestEmailVerification>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof requestEmailVerification>>, TError,void, TContext> => {
+
+const mutationKey = ['requestEmailVerification'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof requestEmailVerification>>, void> = () => {
+
+
+          return  requestEmailVerification(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RequestEmailVerificationMutationResult = NonNullable<Awaited<ReturnType<typeof requestEmailVerification>>>
+
+    export type RequestEmailVerificationMutationError = ErrorType<void>
+
+    /**
+ * @summary (Re)send a verification code to the current user's own email
+ */
+export const useRequestEmailVerification = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestEmailVerification>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof requestEmailVerification>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getRequestEmailVerificationMutationOptions(options));
+    }
+
+export const getConfirmEmailVerificationUrl = () => {
+
+
+
+
+  return `/api/auth/verify/confirm`
+}
+
+/**
+ * @summary Confirm the current user's email with a one-time code
+ */
+export const confirmEmailVerification = async (verifyConfirmInput: VerifyConfirmInput, options?: RequestInit): Promise<AuthUser> => {
+
+  return customFetch<AuthUser>(getConfirmEmailVerificationUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      verifyConfirmInput,)
+  }
+);}
+
+
+
+
+export const getConfirmEmailVerificationMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof confirmEmailVerification>>, TError,{data: BodyType<VerifyConfirmInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof confirmEmailVerification>>, TError,{data: BodyType<VerifyConfirmInput>}, TContext> => {
+
+const mutationKey = ['confirmEmailVerification'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof confirmEmailVerification>>, {data: BodyType<VerifyConfirmInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  confirmEmailVerification(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ConfirmEmailVerificationMutationResult = NonNullable<Awaited<ReturnType<typeof confirmEmailVerification>>>
+    export type ConfirmEmailVerificationMutationBody = BodyType<VerifyConfirmInput>
+    export type ConfirmEmailVerificationMutationError = ErrorType<void>
+
+    /**
+ * @summary Confirm the current user's email with a one-time code
+ */
+export const useConfirmEmailVerification = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof confirmEmailVerification>>, TError,{data: BodyType<VerifyConfirmInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof confirmEmailVerification>>,
+        TError,
+        {data: BodyType<VerifyConfirmInput>},
+        TContext
+      > => {
+      return useMutation(getConfirmEmailVerificationMutationOptions(options));
+    }
+
+export const getGetAuthProvidersUrl = () => {
+
+
+
+
+  return `/api/auth/providers`
+}
+
+/**
+ * @summary Which optional sign-in providers are configured
+ */
+export const getAuthProviders = async ( options?: RequestInit): Promise<AuthProviders> => {
+
+  return customFetch<AuthProviders>(getGetAuthProvidersUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAuthProvidersQueryKey = () => {
+    return [
+    `/api/auth/providers`
+    ] as const;
+    }
+
+
+export const getGetAuthProvidersQueryOptions = <TData = Awaited<ReturnType<typeof getAuthProviders>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAuthProviders>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAuthProvidersQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAuthProviders>>> = ({ signal }) => getAuthProviders({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAuthProviders>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAuthProvidersQueryResult = NonNullable<Awaited<ReturnType<typeof getAuthProviders>>>
+export type GetAuthProvidersQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Which optional sign-in providers are configured
+ */
+
+export function useGetAuthProviders<TData = Awaited<ReturnType<typeof getAuthProviders>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAuthProviders>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAuthProvidersQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGoogleLoginUrl = () => {
+
+
+
+
+  return `/api/auth/google`
+}
+
+/**
+ * @summary Start the Google OAuth sign-in flow (browser redirect, not for XHR)
+ */
+export const googleLogin = async ( options?: RequestInit): Promise<unknown> => {
+
+  return customFetch<unknown>(getGoogleLoginUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGoogleLoginQueryKey = () => {
+    return [
+    `/api/auth/google`
+    ] as const;
+    }
+
+
+export const getGoogleLoginQueryOptions = <TData = Awaited<ReturnType<typeof googleLogin>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof googleLogin>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGoogleLoginQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof googleLogin>>> = ({ signal }) => googleLogin({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof googleLogin>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GoogleLoginQueryResult = NonNullable<Awaited<ReturnType<typeof googleLogin>>>
+export type GoogleLoginQueryError = ErrorType<void>
+
+
+/**
+ * @summary Start the Google OAuth sign-in flow (browser redirect, not for XHR)
+ */
+
+export function useGoogleLogin<TData = Awaited<ReturnType<typeof googleLogin>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof googleLogin>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGoogleLoginQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGoogleCallbackUrl = (params?: GoogleCallbackParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/auth/google/callback?${stringifiedParams}` : `/api/auth/google/callback`
+}
+
+/**
+ * @summary Google OAuth redirect target — completes login and redirects to the frontend
+ */
+export const googleCallback = async (params?: GoogleCallbackParams, options?: RequestInit): Promise<unknown> => {
+
+  return customFetch<unknown>(getGoogleCallbackUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGoogleCallbackQueryKey = (params?: GoogleCallbackParams,) => {
+    return [
+    `/api/auth/google/callback`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGoogleCallbackQueryOptions = <TData = Awaited<ReturnType<typeof googleCallback>>, TError = ErrorType<void>>(params?: GoogleCallbackParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof googleCallback>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGoogleCallbackQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof googleCallback>>> = ({ signal }) => googleCallback(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof googleCallback>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GoogleCallbackQueryResult = NonNullable<Awaited<ReturnType<typeof googleCallback>>>
+export type GoogleCallbackQueryError = ErrorType<void>
+
+
+/**
+ * @summary Google OAuth redirect target — completes login and redirects to the frontend
+ */
+
+export function useGoogleCallback<TData = Awaited<ReturnType<typeof googleCallback>>, TError = ErrorType<void>>(
+ params?: GoogleCallbackParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof googleCallback>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGoogleCallbackQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetAdminSetupStatusUrl = () => {
+
+
+
+
+  return `/api/admin/setup`
+}
+
+/**
+ * @summary Whether an admin account already exists
+ */
+export const getAdminSetupStatus = async ( options?: RequestInit): Promise<AdminSetupStatus> => {
+
+  return customFetch<AdminSetupStatus>(getGetAdminSetupStatusUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAdminSetupStatusQueryKey = () => {
+    return [
+    `/api/admin/setup`
+    ] as const;
+    }
+
+
+export const getGetAdminSetupStatusQueryOptions = <TData = Awaited<ReturnType<typeof getAdminSetupStatus>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminSetupStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAdminSetupStatusQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAdminSetupStatus>>> = ({ signal }) => getAdminSetupStatus({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAdminSetupStatus>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAdminSetupStatusQueryResult = NonNullable<Awaited<ReturnType<typeof getAdminSetupStatus>>>
+export type GetAdminSetupStatusQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Whether an admin account already exists
+ */
+
+export function useGetAdminSetupStatus<TData = Awaited<ReturnType<typeof getAdminSetupStatus>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminSetupStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAdminSetupStatusQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getBootstrapAdminUrl = () => {
+
+
+
+
+  return `/api/admin/setup`
+}
+
+/**
+ * @summary Bootstrap the first admin account using a one-time setup token
+ */
+export const bootstrapAdmin = async (adminSetupInput: AdminSetupInput, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getBootstrapAdminUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      adminSetupInput,)
+  }
+);}
+
+
+
+
+export const getBootstrapAdminMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bootstrapAdmin>>, TError,{data: BodyType<AdminSetupInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof bootstrapAdmin>>, TError,{data: BodyType<AdminSetupInput>}, TContext> => {
+
+const mutationKey = ['bootstrapAdmin'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof bootstrapAdmin>>, {data: BodyType<AdminSetupInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  bootstrapAdmin(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type BootstrapAdminMutationResult = NonNullable<Awaited<ReturnType<typeof bootstrapAdmin>>>
+    export type BootstrapAdminMutationBody = BodyType<AdminSetupInput>
+    export type BootstrapAdminMutationError = ErrorType<void>
+
+    /**
+ * @summary Bootstrap the first admin account using a one-time setup token
+ */
+export const useBootstrapAdmin = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bootstrapAdmin>>, TError,{data: BodyType<AdminSetupInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof bootstrapAdmin>>,
+        TError,
+        {data: BodyType<AdminSetupInput>},
+        TContext
+      > => {
+      return useMutation(getBootstrapAdminMutationOptions(options));
+    }
+
+export const getListAdminUsersUrl = () => {
+
+
+
+
+  return `/api/admin/users`
+}
+
+/**
+ * @summary List all users (admin only)
+ */
+export const listAdminUsers = async ( options?: RequestInit): Promise<AdminUser[]> => {
+
+  return customFetch<AdminUser[]>(getListAdminUsersUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAdminUsersQueryKey = () => {
+    return [
+    `/api/admin/users`
+    ] as const;
+    }
+
+
+export const getListAdminUsersQueryOptions = <TData = Awaited<ReturnType<typeof listAdminUsers>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminUsers>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAdminUsersQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAdminUsers>>> = ({ signal }) => listAdminUsers({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAdminUsers>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAdminUsersQueryResult = NonNullable<Awaited<ReturnType<typeof listAdminUsers>>>
+export type ListAdminUsersQueryError = ErrorType<void>
+
+
+/**
+ * @summary List all users (admin only)
+ */
+
+export function useListAdminUsers<TData = Awaited<ReturnType<typeof listAdminUsers>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminUsers>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAdminUsersQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

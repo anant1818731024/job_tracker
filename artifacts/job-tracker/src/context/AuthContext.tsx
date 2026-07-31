@@ -6,11 +6,19 @@ interface AuthContextType {
   user: AuthUser | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
+  register: (name: string, email: string, password: string) => Promise<void>;
+  otpLogin: (email: string, code: string) => Promise<void>;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
+
+async function unwrap(res: Response): Promise<AuthUser> {
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error ?? "Request failed");
+  return data;
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -35,13 +43,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   async function login(email: string, password: string) {
-    const res = await api.auth.login({ email, password });
-    if (!res.ok) {
-      const data = await res.json();
-      throw new Error(data.error ?? "Login failed");
-    }
-    const data = await res.json();
-    setUser(data);
+    setUser(await unwrap(await api.auth.login({ email, password })));
+  }
+
+  async function register(name: string, email: string, password: string) {
+    setUser(await unwrap(await api.auth.register({ name, email, password })));
+  }
+
+  async function otpLogin(email: string, code: string) {
+    setUser(await unwrap(await api.auth.otpLogin({ email, code })));
   }
 
   async function logout() {
@@ -50,7 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, refresh }}>
+    <AuthContext.Provider value={{ user, loading, login, register, otpLogin, logout, refresh }}>
       {children}
     </AuthContext.Provider>
   );

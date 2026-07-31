@@ -61,4 +61,8 @@ export interface AuthUser {
   id: string;
   email: string;
   name: string | null;
+  isAdmin: boolean;
+  emailVerifiedAt: string | null;
+  mustVerify: boolean;
+  verifyGraceEndsAt: string;
 }

@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { BriefcaseBusiness, Loader2 } from "lucide-react";
-import { api } from "@/lib/api";
+import { useAuth } from "@/context/AuthContext";
 
 export default function RegisterPage() {
   const [, setLocation] = useLocation();
+  const { register } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -15,15 +16,13 @@ export default function RegisterPage() {
     e.preventDefault();
     setLoading(true);
     setError("");
-
-    const res = await api.auth.register({ name, email, password });
-    setLoading(false);
-
-    if (!res.ok) {
-      const data = await res.json();
-      setError(data.error ?? "Registration failed");
-    } else {
-      setLocation("/login");
+    try {
+      await register(name, email, password);
+      setLocation("/dashboard");
+    } catch (err: any) {
+      setError(err.message ?? "Registration failed");
+    } finally {
+      setLoading(false);
     }
   }
 

@@ -37,7 +37,11 @@ export const LoginBody = zod.object({
 export const LoginResponse = zod.object({
   "id": zod.string(),
   "email": zod.string(),
-  "name": zod.string().nullish()
+  "name": zod.string().nullish(),
+  "isAdmin": zod.boolean(),
+  "emailVerifiedAt": zod.string().nullable(),
+  "mustVerify": zod.boolean().describe('True once the email-verification grace period has elapsed for an unverified account — the app must be fully blocked until verified.'),
+  "verifyGraceEndsAt": zod.string().describe('ISO timestamp — when the grace period ends (createdAt + 48h) for an unverified account.')
 })
 
 
@@ -47,8 +51,131 @@ export const LoginResponse = zod.object({
 export const GetMeResponse = zod.object({
   "id": zod.string(),
   "email": zod.string(),
-  "name": zod.string().nullish()
+  "name": zod.string().nullish(),
+  "isAdmin": zod.boolean(),
+  "emailVerifiedAt": zod.string().nullable(),
+  "mustVerify": zod.boolean().describe('True once the email-verification grace period has elapsed for an unverified account — the app must be fully blocked until verified.'),
+  "verifyGraceEndsAt": zod.string().describe('ISO timestamp — when the grace period ends (createdAt + 48h) for an unverified account.')
 })
+
+
+/**
+ * @summary Send a one-time email code (used for OTP login and password reset)
+ */
+export const RequestOtpBody = zod.object({
+  "email": zod.string()
+})
+
+export const RequestOtpResponse = zod.object({
+  "ok": zod.boolean(),
+  "resendIn": zod.number().describe('Seconds to wait before requesting another code.'),
+  "alreadyVerified": zod.boolean().optional()
+})
+
+
+/**
+ * @summary Log in (or sign up) with an emailed one-time code
+ */
+export const OtpLoginBody = zod.object({
+  "email": zod.string(),
+  "code": zod.string()
+})
+
+export const OtpLoginResponse = zod.object({
+  "id": zod.string(),
+  "email": zod.string(),
+  "name": zod.string().nullish(),
+  "isAdmin": zod.boolean(),
+  "emailVerifiedAt": zod.string().nullable(),
+  "mustVerify": zod.boolean().describe('True once the email-verification grace period has elapsed for an unverified account — the app must be fully blocked until verified.'),
+  "verifyGraceEndsAt": zod.string().describe('ISO timestamp — when the grace period ends (createdAt + 48h) for an unverified account.')
+})
+
+
+/**
+ * @summary Set a new password after verifying an emailed one-time code
+ */
+export const ResetPasswordBody = zod.object({
+  "email": zod.string(),
+  "code": zod.string(),
+  "newPassword": zod.string()
+})
+
+
+/**
+ * @summary (Re)send a verification code to the current user's own email
+ */
+export const RequestEmailVerificationResponse = zod.object({
+  "ok": zod.boolean(),
+  "resendIn": zod.number().describe('Seconds to wait before requesting another code.'),
+  "alreadyVerified": zod.boolean().optional()
+})
+
+
+/**
+ * @summary Confirm the current user's email with a one-time code
+ */
+export const ConfirmEmailVerificationBody = zod.object({
+  "code": zod.string()
+})
+
+export const ConfirmEmailVerificationResponse = zod.object({
+  "id": zod.string(),
+  "email": zod.string(),
+  "name": zod.string().nullish(),
+  "isAdmin": zod.boolean(),
+  "emailVerifiedAt": zod.string().nullable(),
+  "mustVerify": zod.boolean().describe('True once the email-verification grace period has elapsed for an unverified account — the app must be fully blocked until verified.'),
+  "verifyGraceEndsAt": zod.string().describe('ISO timestamp — when the grace period ends (createdAt + 48h) for an unverified account.')
+})
+
+
+/**
+ * @summary Which optional sign-in providers are configured
+ */
+export const GetAuthProvidersResponse = zod.object({
+  "google": zod.boolean()
+})
+
+
+/**
+ * @summary Google OAuth redirect target — completes login and redirects to the frontend
+ */
+export const GoogleCallbackQueryParams = zod.object({
+  "code": zod.coerce.string().optional(),
+  "state": zod.coerce.string().optional()
+})
+
+
+/**
+ * @summary Whether an admin account already exists
+ */
+export const GetAdminSetupStatusResponse = zod.object({
+  "adminExists": zod.boolean()
+})
+
+
+/**
+ * @summary Bootstrap the first admin account using a one-time setup token
+ */
+export const BootstrapAdminBody = zod.object({
+  "token": zod.string(),
+  "email": zod.string()
+})
+
+
+/**
+ * @summary List all users (admin only)
+ */
+export const ListAdminUsersResponseItem = zod.object({
+  "id": zod.string(),
+  "email": zod.string(),
+  "name": zod.string().nullish(),
+  "isAdmin": zod.boolean(),
+  "emailVerifiedAt": zod.string().nullable(),
+  "createdAt": zod.string()
+})
+export const ListAdminUsersResponse = zod.array(ListAdminUsersResponseItem)
 
 
 /**

@@ -26,6 +26,63 @@ export interface AuthUser {
   email: string;
   /** @nullable */
   name?: string | null;
+  isAdmin: boolean;
+  /** @nullable */
+  emailVerifiedAt: string | null;
+  /** True once the email-verification grace period has elapsed for an unverified account — the app must be fully blocked until verified. */
+  mustVerify: boolean;
+  /** ISO timestamp — when the grace period ends (createdAt + 48h) for an unverified account. */
+  verifyGraceEndsAt: string;
+}
+
+export interface OtpRequestInput {
+  email: string;
+}
+
+export interface OtpRequestResult {
+  ok: boolean;
+  /** Seconds to wait before requesting another code. */
+  resendIn: number;
+  alreadyVerified?: boolean;
+}
+
+export interface OtpLoginInput {
+  email: string;
+  code: string;
+}
+
+export interface PasswordResetInput {
+  email: string;
+  code: string;
+  newPassword: string;
+}
+
+export interface VerifyConfirmInput {
+  code: string;
+}
+
+export interface AuthProviders {
+  google: boolean;
+}
+
+export interface AdminSetupStatus {
+  adminExists: boolean;
+}
+
+export interface AdminSetupInput {
+  token: string;
+  email: string;
+}
+
+export interface AdminUser {
+  id: string;
+  email: string;
+  /** @nullable */
+  name?: string | null;
+  isAdmin: boolean;
+  /** @nullable */
+  emailVerifiedAt: string | null;
+  createdAt: string;
 }
 
 export interface StatusHistory {
@@ -99,6 +156,11 @@ export interface DashboardStats {
   stale: Application[];
   recent: Application[];
 }
+
+export type GoogleCallbackParams = {
+code?: string;
+state?: string;
+};
 
 export type ListApplicationsParams = {
 search?: string;

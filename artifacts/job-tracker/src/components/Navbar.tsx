@@ -6,6 +6,7 @@ import {
   Columns2,
   LogOut,
   BriefcaseBusiness,
+  ShieldCheck,
 } from "lucide-react";
 
 const links = [
@@ -16,7 +17,8 @@ const links = [
 
 export default function Navbar() {
   const [location] = useLocation();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
+  const navLinks = user?.isAdmin ? [...links, { href: "/admin", label: "Admin", icon: ShieldCheck }] : links;
 
   return (
     <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
@@ -28,7 +30,7 @@ export default function Navbar() {
               <span>JobTracker</span>
             </Link>
             <div className="hidden sm:flex gap-1">
-              {links.map(({ href, label, icon: Icon }) => (
+              {navLinks.map(({ href, label, icon: Icon }) => (
                 <Link
                   key={href}
                   href={href}
@@ -56,7 +58,7 @@ export default function Navbar() {
 
       {/* Mobile nav */}
       <div className="sm:hidden border-t border-gray-100 flex">
-        {links.map(({ href, label, icon: Icon }) => (
+        {navLinks.map(({ href, label, icon: Icon }) => (
           <Link
             key={href}
             href={href}

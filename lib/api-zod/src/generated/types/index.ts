@@ -6,14 +6,24 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './adminSetupInput';
+export * from './adminSetupStatus';
+export * from './adminUser';
 export * from './application';
 export * from './applicationInput';
 export * from './applicationUpdate';
+export * from './authProviders';
 export * from './authUser';
 export * from './dashboardStats';
 export * from './dashboardStatsByStatus';
+export * from './googleCallbackParams';
 export * from './healthStatus';
 export * from './listApplicationsParams';
 export * from './loginInput';
+export * from './otpLoginInput';
+export * from './otpRequestInput';
+export * from './otpRequestResult';
+export * from './passwordResetInput';
 export * from './registerInput';
 export * from './statusHistory';
+export * from './verifyConfirmInput';

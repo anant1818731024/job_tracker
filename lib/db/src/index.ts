@@ -10,7 +10,11 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
-export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+// Force UTC for every connection's session timezone. Schema columns use
+// `timestamp` (no tz), so `now()`/`defaultNow()` cast to the session's local
+// wall-clock on write; without this, a non-UTC DB server timezone silently
+// skews every stored timestamp relative to Node's UTC-based `Date`.
+export const pool = new Pool({ connectionString: process.env.DATABASE_URL, options: "-c timezone=UTC" });
 export const db = drizzle(pool, { schema });
 
 export * from "./schema";
