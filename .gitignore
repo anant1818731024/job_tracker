@@ -50,3 +50,7 @@ Thumbs.db
 
 # Vercel
 .vercel
+
+# Local secrets — never commit real credentials
+.env
+.env.local
