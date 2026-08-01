@@ -8,6 +8,8 @@ import RegisterPage from "@/pages/RegisterPage";
 import ForgotPasswordPage from "@/pages/ForgotPasswordPage";
 import AdminSetupPage from "@/pages/AdminSetupPage";
 import AdminPage from "@/pages/AdminPage";
+import AdminPanelLoginPage from "@/pages/AdminPanelLoginPage";
+import AdminPanelPage from "@/pages/AdminPanelPage";
 import DashboardPage from "@/pages/DashboardPage";
 import ApplicationsPage from "@/pages/ApplicationsPage";
 import NewApplicationPage from "@/pages/NewApplicationPage";
@@ -65,6 +67,8 @@ function Router() {
       <Route path="/register" component={RegisterPage} />
       <Route path="/forgot-password" component={ForgotPasswordPage} />
       <Route path="/admin/setup" component={AdminSetupPage} />
+      <Route path="/admin/panel/login" component={AdminPanelLoginPage} />
+      <Route path="/admin/panel" component={AdminPanelPage} />
       <Route path="/admin">
         {() => (
           <AdminRoute>

@@ -6,7 +6,7 @@ interface AuthContextType {
   user: AuthUser | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string) => Promise<void>;
+  register: (name: string, email: string, password: string, code: string) => Promise<void>;
   otpLogin: (email: string, code: string) => Promise<void>;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
@@ -54,8 +54,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(await unwrap(await api.auth.login({ email, password })));
   }
 
-  async function register(name: string, email: string, password: string) {
-    setUser(await unwrap(await api.auth.register({ name, email, password })));
+  async function register(name: string, email: string, password: string, code: string) {
+    setUser(await unwrap(await api.auth.register({ name, email, password, code })));
   }
 
   async function otpLogin(email: string, code: string) {

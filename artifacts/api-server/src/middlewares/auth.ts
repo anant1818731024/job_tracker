@@ -54,3 +54,12 @@ export async function requireAdmin(req: Request, res: Response, next: NextFuncti
   req.userId = userId;
   return next();
 }
+
+// Gates the separate env-credential admin panel (/admin/panel). Entirely
+// independent of the userId/isAdmin system above — this identity isn't tied
+// to any user record, just a flag on the session set by a successful
+// ADMIN_USERNAME/ADMIN_PASSWORD_HASH login.
+export function requireEnvAdmin(req: Request, res: Response, next: NextFunction) {
+  if (!req.session.envAdmin) return res.status(401).json({ error: "Unauthorized" });
+  return next();
+}

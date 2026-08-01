@@ -16,7 +16,9 @@ export const GOOGLE_LOGIN_URL = "/api/auth/google";
 
 export const api = {
   auth: {
-    register: (data: { name?: string; email: string; password: string }) =>
+    registerRequestOtp: (data: { email: string }) =>
+      request("/auth/register/request-otp", { method: "POST", body: JSON.stringify(data) }),
+    register: (data: { name?: string; email: string; password: string; code: string }) =>
       request("/auth/register", { method: "POST", body: JSON.stringify(data) }),
     login: (data: { email: string; password: string }) =>
       request("/auth/login", { method: "POST", body: JSON.stringify(data) }),
@@ -38,6 +40,18 @@ export const api = {
     setup: (data: { token: string; email: string }) =>
       request("/admin/setup", { method: "POST", body: JSON.stringify(data) }),
     users: () => request("/admin/users"),
+  },
+  adminPanel: {
+    login: (data: { username: string; password: string }) =>
+      request("/admin/panel/login", { method: "POST", body: JSON.stringify(data) }),
+    logout: () => request("/admin/panel/logout", { method: "POST" }),
+    session: () => request("/admin/panel/session"),
+    users: () => request("/admin/panel/users"),
+    updateUser: (id: string, data: { emailVerified?: boolean; isAdmin?: boolean }) =>
+      request(`/admin/panel/users/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
+    deleteUser: (id: string) => request(`/admin/panel/users/${id}`, { method: "DELETE" }),
+    applications: () => request("/admin/panel/applications"),
+    deleteApplication: (id: string) => request(`/admin/panel/applications/${id}`, { method: "DELETE" }),
   },
   applications: {
     list: (params?: Record<string, string>) => {

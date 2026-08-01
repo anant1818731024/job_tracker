@@ -21,15 +21,51 @@ function normalizeEmail(raw: unknown): string | null {
   return email;
 }
 
+router.post("/auth/register/request-otp", async (req, res) => {
+  const email = normalizeEmail(req.body.email);
+  if (!email) {
+    return res.status(400).json({ error: "Valid email required" });
+  }
+
+  const existing = await db.select().from(usersTable).where(eq(usersTable.email, email)).limit(1);
+  if (existing.length > 0) {
+    return res.status(409).json({ error: "Email already in use" });
+  }
+
+  let code: string, resendIn: number;
+  try {
+    ({ code, resendIn } = await createOtp(email));
+  } catch (err) {
+    if (err instanceof OtpRateLimitError) {
+      return res.status(429).json({ error: err.message, retryAfter: err.retryAfter });
+    }
+    req.log.error(err);
+    return res.status(500).json({ error: "Could not generate a code. Please try again." });
+  }
+
+  try {
+    await sendOtpEmail(email, code);
+  } catch (err) {
+    req.log.error(err);
+    return res.status(500).json({ error: "Could not send the verification email. Please try again later." });
+  }
+
+  return res.json({ ok: true, resendIn });
+});
+
 router.post("/auth/register", async (req, res) => {
   try {
-    const { name, password } = req.body;
+    const { name, password, code } = req.body;
     const email = normalizeEmail(req.body.email);
-    if (!email || !password) {
-      return res.status(400).json({ error: "Email and password are required" });
+    if (!email || !password || !code) {
+      return res.status(400).json({ error: "Email, password, and code are required" });
     }
     if (typeof password !== "string" || password.length < 8) {
       return res.status(400).json({ error: "Password must be at least 8 characters" });
+    }
+    const validCode = await verifyOtp(email, code);
+    if (!validCode) {
+      return res.status(401).json({ error: "Invalid or expired code" });
     }
     const existing = await db.select().from(usersTable).where(eq(usersTable.email, email)).limit(1);
     if (existing.length > 0) {
@@ -41,18 +77,10 @@ router.post("/auth/register", async (req, res) => {
       name: name || null,
       email,
       password: hashed,
+      emailVerifiedAt: new Date(),
     }).returning();
 
     await establishSession(req, user.id);
-
-    // Best-effort: don't fail registration if the verification email can't be sent.
-    try {
-      const { code } = await createOtp(email);
-      await sendOtpEmail(email, code);
-    } catch (err) {
-      req.log.error(err, "Failed to send verification email after registration");
-    }
-
     return res.status(201).json(toAuthUser(user));
   } catch (err) {
     req.log.error(err);
