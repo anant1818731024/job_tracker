@@ -14,9 +14,17 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
+export class ApiError extends Error {
+  code?: string;
+  constructor(message: string, code?: string) {
+    super(message);
+    this.code = code;
+  }
+}
+
 async function unwrap(res: Response): Promise<AuthUser> {
   const data = await res.json();
-  if (!res.ok) throw new Error(data.error ?? "Request failed");
+  if (!res.ok) throw new ApiError(data.error ?? "Request failed", data.code);
   return data;
 }
 

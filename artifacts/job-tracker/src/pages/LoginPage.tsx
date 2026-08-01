@@ -23,6 +23,7 @@ export default function LoginPage() {
   const [otpSent, setOtpSent] = useState(false);
   const [resendIn, setResendIn] = useState(0);
   const [error, setError] = useState("");
+  const [noPasswordSet, setNoPasswordSet] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleEnabled, setGoogleEnabled] = useState(false);
 
@@ -47,11 +48,13 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     setError("");
+    setNoPasswordSet(false);
     try {
       await login(email, password);
       setLocation("/dashboard");
     } catch (err: any) {
       setError(err.message ?? "Invalid email or password");
+      setNoPasswordSet(err.code === "NO_PASSWORD_SET");
     } finally {
       setLoading(false);
     }
@@ -63,6 +66,11 @@ export default function LoginPage() {
     try {
       const res = await api.auth.otpRequest({ email });
       const data = await res.json();
+      if (res.status === 429) {
+        setOtpSent(true);
+        setResendIn(data.retryAfter ?? 30);
+        return;
+      }
       if (!res.ok) throw new Error(data.error ?? "Could not send code");
       setOtpSent(true);
       setResendIn(data.resendIn ?? 30);
@@ -119,6 +127,17 @@ export default function LoginPage() {
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg">
               {error}
+              {noPasswordSet && (
+                <>
+                  {" "}
+                  <Link
+                    href={`/forgot-password?email=${encodeURIComponent(email)}&setup=1`}
+                    className="font-medium underline hover:no-underline"
+                  >
+                    Set up a password
+                  </Link>
+                </>
+              )}
             </div>
           )}
 

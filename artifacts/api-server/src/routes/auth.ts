@@ -72,7 +72,10 @@ router.post("/auth/login", async (req, res) => {
       return res.status(401).json({ error: "Invalid credentials" });
     }
     if (!user.password) {
-      return res.status(401).json({ error: "This account has no password — sign in with an email code or Google instead" });
+      return res.status(401).json({
+        error: "This account has no password — sign in with an email code or Google instead",
+        code: "NO_PASSWORD_SET",
+      });
     }
     const valid = await bcrypt.compare(password, user.password);
     if (!valid) {

@@ -23,6 +23,13 @@ export function useEmailVerification() {
     try {
       const res = await api.auth.verifyRequest();
       const data = await res.json();
+      if (res.status === 429) {
+        // A code is already out there (e.g. sent automatically at registration) —
+        // this isn't a failure, just show the code entry with a live countdown.
+        setSent(true);
+        setResendIn(data.retryAfter ?? 30);
+        return;
+      }
       if (!res.ok) throw new Error(data.error ?? "Could not send code");
       setSent(true);
       setResendIn(data.resendIn ?? 30);

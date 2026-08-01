@@ -1,12 +1,17 @@
 import { useState, useEffect } from "react";
-import { Link, useLocation } from "wouter";
+import { Link, useLocation, useSearch } from "wouter";
 import { BriefcaseBusiness, Loader2, CheckCircle2 } from "lucide-react";
 import { api } from "@/lib/api";
 
 export default function ForgotPasswordPage() {
   const [, setLocation] = useLocation();
+  const search = useSearch();
+  const params = new URLSearchParams(search);
+  const isSetup = params.get("setup") === "1";
+  const prefillEmail = params.get("email") ?? "";
+
   const [step, setStep] = useState<"request" | "reset" | "done">("request");
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(prefillEmail);
   const [code, setCode] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [error, setError] = useState("");
@@ -19,6 +24,11 @@ export default function ForgotPasswordPage() {
     return () => clearInterval(id);
   }, [resendIn]);
 
+  useEffect(() => {
+    if (prefillEmail) requestCode();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   async function requestCode(e?: React.FormEvent) {
     e?.preventDefault();
     setLoading(true);
@@ -26,6 +36,11 @@ export default function ForgotPasswordPage() {
     try {
       const res = await api.auth.otpRequest({ email });
       const data = await res.json();
+      if (res.status === 429) {
+        setStep("reset");
+        setResendIn(data.retryAfter ?? 30);
+        return;
+      }
       if (!res.ok) throw new Error(data.error ?? "Could not send code");
       setStep("reset");
       setResendIn(data.resendIn ?? 30);
@@ -59,11 +74,17 @@ export default function ForgotPasswordPage() {
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-indigo-600 mb-4">
             <BriefcaseBusiness className="w-7 h-7 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">Reset your password</h1>
+          <h1 className="text-3xl font-bold text-gray-900">
+            {isSetup ? "Set up a password" : "Reset your password"}
+          </h1>
           <p className="text-gray-500 mt-1">
-            {step === "request" && "We'll email you a code to reset it."}
-            {step === "reset" && "Enter the code and your new password."}
-            {step === "done" && "Your password has been reset."}
+            {step === "request" && "We'll email you a code to continue."}
+            {step === "reset" &&
+              (isSetup
+                ? "Enter the code and choose a password."
+                : "Enter the code and your new password.")}
+            {step === "done" &&
+              (isSetup ? "Your password has been set." : "Your password has been reset.")}
           </p>
         </div>
 
@@ -83,9 +104,10 @@ export default function ForgotPasswordPage() {
                 <input
                   type="email"
                   required
+                  disabled={!!prefillEmail}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition disabled:bg-gray-50 disabled:text-gray-500"
                   placeholder="you@example.com"
                 />
               </div>
@@ -95,7 +117,7 @@ export default function ForgotPasswordPage() {
                 className="w-full bg-indigo-600 text-white py-2.5 rounded-lg font-medium hover:bg-indigo-700 transition disabled:opacity-60 flex items-center justify-center gap-2"
               >
                 {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-                Send reset code
+                Send code
               </button>
             </form>
           )}
@@ -126,7 +148,7 @@ export default function ForgotPasswordPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  New password
+                  {isSetup ? "Password" : "New password"}
                 </label>
                 <input
                   type="password"
@@ -144,7 +166,7 @@ export default function ForgotPasswordPage() {
                 className="w-full bg-indigo-600 text-white py-2.5 rounded-lg font-medium hover:bg-indigo-700 transition disabled:opacity-60 flex items-center justify-center gap-2"
               >
                 {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-                Reset password
+                {isSetup ? "Set password" : "Reset password"}
               </button>
             </form>
           )}
