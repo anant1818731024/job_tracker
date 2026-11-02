@@ -14,6 +14,8 @@ import {
   Bell,
 } from "lucide-react";
 import { api } from "@/lib/api";
+import RemindersWidget from "@/components/RemindersWidget";
+import { daysFromNowAt9 } from "@/lib/reminders";
 
 interface DashboardStats {
   total: number;
@@ -26,6 +28,23 @@ export default function DashboardPage() {
   const { user } = useAuth();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [remindersKey, setRemindersKey] = useState(0);
+  const [remindedIds, setRemindedIds] = useState<Set<string>>(new Set());
+
+  async function remindLater(app: ApplicationWithHistory, e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    const res = await api.reminders.create({
+      applicationId: app.id,
+      type: "FOLLOW_UP",
+      title: `Follow up with ${app.company}`,
+      dueAt: daysFromNowAt9(3).toISOString(),
+    });
+    if (res.ok) {
+      setRemindedIds(s => new Set(s).add(app.id));
+      setRemindersKey(k => k + 1);
+    }
+  }
 
   useEffect(() => {
     api.applications.dashboard()
@@ -44,7 +63,7 @@ export default function DashboardPage() {
 
   const byStatus = stats?.byStatus ?? {};
   const recent = stats?.recent ?? [];
-  const stale = stats?.stale ?? [];
+  const stale = (stats?.stale ?? []).filter(a => !remindedIds.has(a.id));
 
   const statCards = [
     { label: "Total Applied", value: stats?.total ?? 0, icon: Briefcase, color: "text-blue-600", bg: "bg-blue-50" },
@@ -137,6 +156,8 @@ export default function DashboardPage() {
         </div>
 
         <div className="space-y-6">
+          <RemindersWidget refreshKey={remindersKey} />
+
           {/* Status breakdown */}
           <div className="bg-white rounded-xl border border-gray-200 p-5">
             <div className="flex items-center gap-2 mb-4">
@@ -173,7 +194,7 @@ export default function DashboardPage() {
                 <h2 className="font-semibold text-amber-900">Follow-up Needed</h2>
               </div>
               <p className="text-xs text-amber-700 mb-3">
-                These applications haven't been updated in 7+ days:
+                No update in 7+ days and no reminder set:
               </p>
               <div className="space-y-2">
                 {stale.map((app) => (
@@ -183,8 +204,18 @@ export default function DashboardPage() {
                     className="flex items-center justify-between text-sm hover:bg-amber-100 rounded-lg px-2 py-1 -mx-2 transition"
                   >
                     <span className="font-medium text-amber-900 truncate">{app.company}</span>
-                    <span className="text-amber-700 text-xs flex-shrink-0 ml-2">
-                      {Math.floor((Date.now() - new Date(app.updatedAt).getTime()) / (1000 * 60 * 60 * 24))}d ago
+                    <span className="flex items-center gap-2 flex-shrink-0 ml-2">
+                      <span className="text-amber-700 text-xs">
+                        {Math.floor((Date.now() - new Date(app.updatedAt).getTime()) / (1000 * 60 * 60 * 24))}d ago
+                      </span>
+                      <button
+                        type="button"
+                        onClick={(e) => remindLater(app, e)}
+                        title="Remind me to follow up in 3 days"
+                        className="text-[11px] font-medium text-amber-800 bg-amber-100 hover:bg-amber-200 rounded px-1.5 py-0.5"
+                      >
+                        Remind me
+                      </button>
                     </span>
                   </Link>
                 ))}

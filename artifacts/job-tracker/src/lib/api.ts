@@ -67,4 +67,16 @@ export const api = {
     dashboard: () => request("/applications/dashboard"),
     export: () => `/api/applications/export`,
   },
+  reminders: {
+    list: (params?: { status?: "open" | "done" | "all"; applicationId?: string; before?: string }) => {
+      const clean = Object.fromEntries(Object.entries(params ?? {}).filter(([, v]) => v)) as Record<string, string>;
+      const qs = Object.keys(clean).length ? `?${new URLSearchParams(clean)}` : "";
+      return request(`/reminders${qs}`);
+    },
+    create: (data: { applicationId?: string; type?: string; title: string; note?: string; dueAt: string }) =>
+      request("/reminders", { method: "POST", body: JSON.stringify(data) }),
+    update: (id: string, data: { title?: string; note?: string | null; dueAt?: string; type?: string; status?: string }) =>
+      request(`/reminders/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
+    delete: (id: string) => request(`/reminders/${id}`, { method: "DELETE" }),
+  },
 };

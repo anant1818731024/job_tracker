@@ -28,7 +28,7 @@ A job application tracker to manage your job search — track applications, view
 
 - `artifacts/job-tracker/` — React + Vite frontend
 - `artifacts/api-server/` — Express backend
-- `lib/db/src/schema/` — Drizzle schema (users, applications, status_history)
+- `lib/db/src/schema/` — Drizzle schema (users, applications, status_history, otp_codes, reminders)
 - `lib/api-spec/openapi.yaml` — OpenAPI source of truth
 - `lib/api-client-react/` — generated React Query hooks
 - `lib/api-zod/` — generated Zod schemas
@@ -48,7 +48,8 @@ A job application tracker to manage your job search — track applications, view
 - **Applications list** — sortable, filterable table with CSV export
 - **Application detail** — full info + status history timeline
 - **New / Edit application** — form with company, role, location, salary, URL, notes
-- **Kanban board** — drag-and-drop between APPLIED → SCREENING → INTERVIEW → OFFER → REJECTED columns
+- **Kanban board** — drag-and-drop between APPLIED → SCREENING → INTERVIEW → OFFER → REJECTED columns; cards show their next reminder
+- **Reminders** — per-application reminders (follow-up / interview / deadline / custom) with done, snooze, delete; dashboard widget grouped Overdue / Today / This week. Status changes auto-create a next-step reminder and dismiss the previous stage's auto reminder (`artifacts/api-server/src/lib/reminders.ts`, rules in `AUTO_RULES`). Routes: `GET/POST /api/reminders`, `PATCH/DELETE /api/reminders/:id`
 
 ## User preferences
 

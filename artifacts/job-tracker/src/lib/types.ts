@@ -66,3 +66,30 @@ export interface AuthUser {
   mustVerify: boolean;
   verifyGraceEndsAt: string;
 }
+
+export type ReminderType = "FOLLOW_UP" | "INTERVIEW" | "DEADLINE" | "CUSTOM";
+export type ReminderStatus = "PENDING" | "DONE" | "DISMISSED";
+
+export const REMINDER_TYPE_LABELS: Record<ReminderType, string> = {
+  FOLLOW_UP: "Follow-up",
+  INTERVIEW: "Interview",
+  DEADLINE: "Deadline",
+  CUSTOM: "Reminder",
+};
+
+export interface Reminder {
+  id: string;
+  userId: string;
+  applicationId: string | null;
+  type: ReminderType;
+  title: string;
+  note: string | null;
+  dueAt: string;
+  status: ReminderStatus;
+  source: "USER" | "AUTO" | "AI";
+  completedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  company: string | null;
+  role: string | null;
+}

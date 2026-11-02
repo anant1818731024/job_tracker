@@ -1,8 +1,9 @@
 import { Router } from "express";
-import { db, applicationsTable, statusHistoryTable } from "@workspace/db";
+import { db, applicationsTable, statusHistoryTable, remindersTable } from "@workspace/db";
 import { eq, and, or, ilike, desc, asc } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import { requireVerifiedAuth as requireAuth } from "../middlewares/auth";
+import { applyStatusAutomation, ensureRemindersTable } from "../lib/reminders";
 
 const router = Router();
 
@@ -30,9 +31,22 @@ router.get("/applications/dashboard", requireAuth, async (req: any, res) => {
     }
 
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    // Applications that already have an open reminder are covered by the
+    // reminders widget, so don't also nag about them as "stale".
+    let withOpenReminder = new Set<string>();
+    try {
+      await ensureRemindersTable();
+      const open = await db.select({ applicationId: remindersTable.applicationId }).from(remindersTable)
+        .where(and(eq(remindersTable.userId, userId), eq(remindersTable.status, "PENDING")));
+      withOpenReminder = new Set(open.map(r => r.applicationId).filter((x): x is string => !!x));
+    } catch (err) {
+      req.log.error({ err }, "failed to load reminders for dashboard");
+    }
+
     const staleRaw = allApps.filter(a =>
       a.status !== "REJECTED" && a.status !== "OFFER" && a.status !== "WITHDRAWN" &&
-      new Date(a.updatedAt) < sevenDaysAgo
+      new Date(a.updatedAt) < sevenDaysAgo &&
+      !withOpenReminder.has(a.id)
     );
 
     const serialize = (a: any) => ({ ...a, appliedDate: a.appliedDate.toISOString(), createdAt: a.createdAt.toISOString(), updatedAt: a.updatedAt.toISOString(), statusHistory: [] });
@@ -144,6 +158,8 @@ router.post("/applications", requireAuth, async (req: any, res) => {
       note: "Application created",
     });
 
+    await applyStatusAutomation(req.userId, id, app.status, req.log);
+
     const history = await db.select().from(statusHistoryTable).where(eq(statusHistoryTable.applicationId, id));
     return res.status(201).json({
       ...app,
@@ -194,6 +210,7 @@ router.patch("/applications/:id", requireAuth, async (req: any, res) => {
         fromStatus: existing.status,
         toStatus: status,
       });
+      await applyStatusAutomation(req.userId, id, status, req.log);
     }
 
     const history = await db.select().from(statusHistoryTable)

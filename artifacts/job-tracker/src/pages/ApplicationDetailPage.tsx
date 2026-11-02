@@ -4,6 +4,7 @@ import StatusBadge from "@/components/StatusBadge";
 import { ApplicationWithHistory, STATUS_LABELS, ApplicationStatus } from "@/lib/types";
 import { ChevronLeft, ExternalLink, Pencil, MapPin, DollarSign, Calendar, History } from "lucide-react";
 import { api } from "@/lib/api";
+import ApplicationReminders from "@/components/ApplicationReminders";
 
 export default function ApplicationDetailPage({ id }: { id: string }) {
   const [, setLocation] = useLocation();
@@ -97,6 +98,8 @@ export default function ApplicationDetailPage({ id }: { id: string }) {
               )}
             </dl>
           </div>
+
+          <ApplicationReminders applicationId={app.id} company={app.company} />
 
           <div className="bg-white rounded-xl border border-gray-200 p-5">
             <h2 className="font-semibold text-gray-900 mb-3">Notes</h2>

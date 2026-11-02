@@ -4,14 +4,27 @@ import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea
 import { Link } from "wouter";
 import StatusBadge from "@/components/StatusBadge";
 import { ApplicationWithHistory, ApplicationStatus, STATUS_COLORS } from "@/lib/types";
-import { MapPin, Plus } from "lucide-react";
+import { MapPin, Plus, Bell } from "lucide-react";
 import { api } from "@/lib/api";
+import type { Reminder } from "@/lib/types";
+import { dueBucket, formatDue } from "@/lib/reminders";
 
 const COLUMNS: ApplicationStatus[] = ["APPLIED", "SCREENING", "INTERVIEW", "OFFER", "REJECTED"];
 
 export default function KanbanPage() {
   const [grouped, setGrouped] = useState<Record<string, ApplicationWithHistory[]>>({});
   const [loading, setLoading] = useState(true);
+  // applicationId -> its next open reminder
+  const [nextReminder, setNextReminder] = useState<Record<string, Reminder>>({});
+
+  async function loadReminders() {
+    const res = await api.reminders.list({ status: "open" });
+    if (!res.ok) return;
+    const list: Reminder[] = await res.json(); // sorted by dueAt asc
+    const map: Record<string, Reminder> = {};
+    for (const r of list) if (r.applicationId && !map[r.applicationId]) map[r.applicationId] = r;
+    setNextReminder(map);
+  }
 
   async function load() {
     setLoading(true);
@@ -29,7 +42,7 @@ export default function KanbanPage() {
     setLoading(false);
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); loadReminders(); }, []);
 
   async function onDragEnd(result: DropResult) {
     const { source, destination, draggableId } = result;
@@ -56,6 +69,7 @@ export default function KanbanPage() {
 
     if (srcCol !== dstCol) {
       await api.applications.update(draggableId, { status: dstCol });
+      loadReminders(); // status change may have created/closed auto reminders
     }
   }
 
@@ -129,9 +143,22 @@ export default function KanbanPage() {
                                       <MapPin className="w-3 h-3" />{app.location}
                                     </p>
                                   )}
-                                  <p className="text-xs text-gray-400 mt-1.5">
-                                    {new Date(app.appliedDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                                  </p>
+                                  <div className="flex items-center justify-between gap-2 mt-1.5">
+                                    <p className="text-xs text-gray-400">
+                                      {new Date(app.appliedDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                                    </p>
+                                    {nextReminder[app.id] && (() => {
+                                      const r = nextReminder[app.id];
+                                      const b = dueBucket(r.dueAt);
+                                      const cls = b === "overdue" ? "text-red-600 bg-red-50" : b === "today" ? "text-amber-700 bg-amber-50" : "text-gray-500 bg-gray-50";
+                                      return (
+                                        <span title={`${r.title} — ${formatDue(r.dueAt)}`} className={`inline-flex items-center gap-1 text-[11px] font-medium rounded px-1.5 py-0.5 truncate max-w-[9rem] ${cls}`}>
+                                          <Bell className="w-3 h-3 flex-shrink-0" />
+                                          <span className="truncate">{formatDue(r.dueAt)}</span>
+                                        </span>
+                                      );
+                                    })()}
+                                  </div>
                                 </Link>
                               </div>
                             )}
