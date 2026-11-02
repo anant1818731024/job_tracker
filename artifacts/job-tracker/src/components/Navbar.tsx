@@ -1,6 +1,5 @@
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/context/AuthContext";
-import ConnectMenu from "@/components/ConnectMenu";
 import {
   LayoutDashboard,
   List,
@@ -47,16 +46,13 @@ export default function Navbar() {
               ))}
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <ConnectMenu />
-            <button
-              onClick={logout}
-              className="flex items-center gap-1.5 text-sm text-gray-600 hover:text-red-600 transition-colors px-3 py-2 rounded-md hover:bg-red-50"
-            >
-              <LogOut className="w-4 h-4" />
-              <span className="hidden sm:inline">Sign out</span>
-            </button>
-          </div>
+          <button
+            onClick={logout}
+            className="flex items-center gap-1.5 text-sm text-gray-600 hover:text-red-600 transition-colors px-3 py-2 rounded-md hover:bg-red-50"
+          >
+            <LogOut className="w-4 h-4" />
+            <span className="hidden sm:inline">Sign out</span>
+          </button>
         </div>
       </div>
 
